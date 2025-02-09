@@ -23,20 +23,60 @@ public class ChatClient {
             BufferedReader input = new BufferedReader(new InputStreamReader(conexion.getInputStream()));
             PrintWriter output = new PrintWriter(conexion.getOutputStream(), true);
             
-            // Comunicacion con el servidor
-            // Envio
-            boolean continuar = true;
-            while (continuar) {
-                String mensage = input.readLine();
-                System.out.println(mensage); 
-                output.println(mensage);
+            // Lectura de la bienvenida y solicitud de nombre de usuario
+            String mensaje = input.readLine();  // "Bienvenidos a Jurassic Chat"
+            System.out.println(mensaje);
+            
+            mensaje = input.readLine();  // "Identificate humano: "
+            System.out.print(mensaje);
+            
+            // Enviar el nombre de usuario al servidor
+            BufferedReader consoleInput = new BufferedReader(new InputStreamReader(System.in));
+            String username = consoleInput.readLine();
+            output.println(username);
+            
+            // Crear un hilo para recibir mensajes del servidor
+            Thread receiveThread = new Thread(new ReceiveMessages(input));
+            receiveThread.start();
+            
+            // Enviar mensajes al servidor
+            String message;
+            while (true) {
+                message = consoleInput.readLine();
+                if (message.equalsIgnoreCase("exit")) {
+                    break;
+                }
+                output.println(message);
             }
-            output.flush();
+            
             // Cerrar los streams
             input.close();
+            output.close();
+            conexion.close();
             
         } catch (IOException ex) {
-            
+            ex.printStackTrace();
+        }
+    }
+    
+    // Clase interna para recibir mensajes del servidor
+    static class ReceiveMessages implements Runnable {
+        private BufferedReader input;
+        
+        ReceiveMessages(BufferedReader input) {
+            this.input = input;
+        }
+        
+        @Override
+        public void run() {
+            try {
+                String serverMessage;
+                while ((serverMessage = input.readLine()) != null) {
+                    System.out.println(serverMessage);
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
         }
     }
     
